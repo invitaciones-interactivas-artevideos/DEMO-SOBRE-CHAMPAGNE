@@ -460,14 +460,13 @@ img {
   line-height: 0.82;
 }
 
-/* MARIPOSAS VISIBLES AJUSTADAS */
 .portrait-deco {
   position: absolute;
   width: calc(190px * var(--deco-scale));
   color: var(--accent);
   opacity: 0.95;
   pointer-events: none;
-  z-index: 3; /* Forzar por encima del marco */
+  z-index: 3;
 }
 
 .portrait-deco.deco-a {
@@ -733,7 +732,6 @@ h2 {
   color: var(--muted);
 }
 
-/* AJUSTE PARA TARJETAS INDIVIDUALES */
 .detail-grid {
   display: flex;
   flex-wrap: wrap;
@@ -817,8 +815,6 @@ h2 {
   background: linear-gradient(0deg, rgba(0,0,0,0.42), transparent);
   pointer-events: none;
 }
-
-/* Se elimina el caption de la foto en la galería */
 
 .placeholder-photo {
   height: 100%;
@@ -1426,6 +1422,13 @@ const CONFIG = {
     }
   },
 
+  // CONFIRMACIÓN DE ASISTENCIA
+  asistencia: {
+    // === AQUÍ DEBES MODIFICAR LA UBICACIÓN / ENLACE DE CONFIRMACIÓN DE ASISTENCIA ===
+    link: "https://docs.google.com/forms/d/e/1FAIpQLScZhjYcfePL1Ylu4gyruySPntMRvHBywHx09yzgDPboeVvNSQ/viewform?usp=sharing&ouid=108226770807790576500",
+    textoBoton: "Confirmar"
+  },
+
   enlaces: {
     whatsappNumero: "59899000000",
     whatsappMensaje: "Hola, confirmo mi asistencia a la fiesta de Valentina."
@@ -1434,7 +1437,8 @@ const CONFIG = {
   playlist: {
     mostrar: true,
     texto: "Sugerí esa canción que sí o sí tiene que sonar en la pista.",
-    link: "https://docs.google.com/forms/"
+    // === AQUÍ DEBES MODIFICAR LA UBICACIÓN / ENLACE DE SUGERIR CANCIÓN ===
+    link: "https://docs.google.com/forms/d/e/1FAIpQLSc0M2amKtZmo0LQ6-le8baC1yZ47R-IweK83PalYt0EIObJGA/viewform?usp=sharing&ouid=108226770807790576500"
   },
 
   album: {
@@ -1442,7 +1446,8 @@ const CONFIG = {
     titulo: "Álbum de fotos",
     texto: "Sube aquí las fotos favoritas que sacaste en la fiesta.",
     boton: "Subir fotos",
-    link: "https://photos.app.goo.gl/"
+    // === AQUÍ DEBES MODIFICAR LA UBICACIÓN / ENLACE DEL ÁLBUM DE FOTOS ===
+    link: "https://docs.google.com/forms/d/e/1FAIpQLScmQNGoapK8xgvTQfr6dpjUac8bcL_V44ABJwGHziPkILef2A/viewform?usp=sharing&ouid=108226770807790576500"
   },
 
   regalo: {
@@ -1478,17 +1483,17 @@ const CONFIG = {
     volumen: 0.72
   },
 
- portada: {
-  modoCirculo: "inicial", //foto o la incial del nombre
-  fotoCirculo: "cover.jpg",
-  posicionFoto: "center center",
+  portada: {
+    modoCirculo: "inicial", //foto o la incial del nombre
+    fotoCirculo: "cover.jpg",
+    posicionFoto: "center center",
 
-  mostrarBotonPrincipal: false,
-  mostrarBotonSecundario: false,
+    mostrarBotonPrincipal: false,
+    mostrarBotonSecundario: false,
 
-  textoBotonPrincipal: "Ver detalles",
-  textoBotonSecundario: "Ver fotos"
-},
+    textoBotonPrincipal: "Ver detalles",
+    textoBotonSecundario: "Ver fotos"
+  },
 
   diseno: {
     paleta: "champagne_premium",
@@ -1688,7 +1693,7 @@ function aplicarTextos() {
   $("heroSecondary").innerHTML = `${ICONOS.flecha}<span>${textoSeguro(CONFIG.portada.textoBotonSecundario)}</span>`;
   
   setText("storyKicker", CONFIG.secciones.historiaKicker);
-  setText("storyQuoteMark", ""); // Aquí se quitó la comilla gigante
+  setText("storyQuoteMark", "");
   setText("storyTitle", CONFIG.secciones.historiaTitulo);
   setText("storyText", CONFIG.secciones.historiaTexto);
   setText("countKicker", CONFIG.secciones.cuentaKicker);
@@ -1757,13 +1762,16 @@ function crearDetalles() {
 
   // 2. Asistencia y Playlist
   const gridAsist = $("gridAsistencia");
+  const asistLink = (CONFIG.asistencia && CONFIG.asistencia.link) ? CONFIG.asistencia.link : whatsappLink(CONFIG.enlaces.whatsappMensaje);
+  const asistTexto = (CONFIG.asistencia && CONFIG.asistencia.textoBoton) ? CONFIG.asistencia.textoBoton : "Confirmar";
+
   let asistHtml = `
     <article class="detail-item">
       <div class="detail-icon">${ICONOS.whatsapp}</div>
       <h3>Confirmación</h3>
       <p>Avisame si vas a acompañarme para preparar todo con mucho cariño.</p>
       <div class="button-row">
-        <a class="btn secundario" href="${whatsappLink(CONFIG.enlaces.whatsappMensaje)}" target="_blank" rel="noopener">Confirmar</a>
+        <a class="btn secundario" href="${textoSeguro(asistLink)}" target="_blank" rel="noopener">${textoSeguro(asistTexto)}</a>
       </div>
     </article>
   `;
