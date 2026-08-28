@@ -1270,7 +1270,7 @@ const CONFIG = {
     textoModal: "Podés usar estos datos si querés hacer un obsequio.",
     cuentaBancaria: "PREX",
     titular: "Rosario Ramirez",
-    númerodecuenta: "1242056",
+    numerodecuenta: "1242056",
     ci: "3.299.617-4",
     datosExtra: [
       { mostrar: false, etiqueta: "Alias", valor: "VALENTINA15" },
@@ -1595,7 +1595,9 @@ function configurarRegalo() {
   const filas = [
     { etiqueta: "Cuenta bancaria", valor: CONFIG.regalo.cuentaBancaria },
     { etiqueta: "Nombre del titular", valor: CONFIG.regalo.titular },
+    { etiqueta: "Número de cuenta", valor: CONFIG.regalo.numerodecuenta },
     { etiqueta: "CI", valor: CONFIG.regalo.ci },
+   
     ...(CONFIG.regalo.datosExtra || [])
   ].filter((dato) => dato && dato.mostrar !== false && dato.valor);
 
