@@ -1303,14 +1303,12 @@ h2 {
     </div>
   </section>
 
-  <!-- 1. DRESS CODE -->
   <section class="section" id="dresscode">
     <div class="section-inner reveal">
       <div class="detail-grid" id="gridDresscode"></div>
     </div>
   </section>
 
-  <!-- 2. GALERÍA -->
   <section class="section" id="galeria">
     <div class="section-inner reveal">
       <div class="section-head">
@@ -1333,21 +1331,18 @@ h2 {
     </div>
   </section>
 
-  <!-- 3. CONFIRMACIÓN Y PLAYLIST -->
   <section class="section" id="asistencia">
     <div class="section-inner reveal">
       <div class="detail-grid" id="gridAsistencia"></div>
     </div>
   </section>
 
-  <!-- 4. ÁLBUM COMPARTIDO -->
   <section class="section" id="album">
     <div class="section-inner reveal">
       <div class="detail-grid" id="gridAlbum"></div>
     </div>
   </section>
 
-  <!-- 5. REGALOS -->
   <section class="section" id="regalos">
     <div class="section-inner reveal">
       <div class="detail-grid" id="gridRegalos"></div>
@@ -1606,7 +1601,7 @@ const $ = (id) => document.getElementById(id);
 
 function textoSeguro(valor) {
   return String(valor ?? "").replace(/[&<>"']/g, (letra) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    "&": "&", "<": "<", ">": ">", '"': """, "'": "'"
   }[letra]));
 }
 
@@ -1979,6 +1974,10 @@ function alternarMusica() {
 function abrirInvitacion() {
   $("sobre").classList.add("abierto");
   intentarMusica();
+  
+  // NUEVO: Guardamos en sessionStorage que la invitación fue abierta
+  sessionStorage.setItem("invitacionAbierta", "true");
+  
   setTimeout(() => {
     $("entrada").classList.add("oculta");
     $("app").classList.add("visible");
@@ -1997,6 +1996,17 @@ function prepararRevelado() {
 }
 
 function iniciar() {
+  // NUEVO: Si detectamos que ya se abrió en esta sesión, saltamos la animación del sobre
+  if (sessionStorage.getItem("invitacionAbierta") === "true") {
+    $("entrada").style.display = "none";
+    const app = $("app");
+    app.style.transition = "none";
+    app.classList.add("visible");
+    document.body.classList.remove("bloqueado");
+    // Restaurar la transición un instante después por si acaso
+    setTimeout(() => { app.style.transition = ""; }, 50);
+  }
+
   aplicarDiseno();
   aplicarMotivos();
   aplicarTextos();
