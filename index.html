@@ -1520,6 +1520,8 @@ function crearEventos() {
       <div class="button-row">
         <a class="btn secundario" href="${textoSeguro(lugar.mapa)}" target="_blank" rel="noopener">${ICONOS.mapa}<span>Ver ubicación</span></a>
       </div>`;
+    const enlaceMapa = item.querySelector("a");
+    if (enlaceMapa) enlaceMapa.addEventListener("click", preservarEstadoInvitacion);
     grid.appendChild(item);
   });
 }
@@ -1622,14 +1624,14 @@ function configurarRegalo() {
 function abrirRegalo() {
   configurarRegalo();
   $("giftModal").classList.add("visible");
-  history.pushState({ modal: "regalo" }, null, "#regalo");
+  history.pushState({ ...(history.state || {}), invitacionAbierta: true, modal: "regalo" }, null, "#regalo");
 }
 
 function cerrarRegalo() {
   const modal = $("giftModal");
   if (modal.classList.contains("visible")) {
     modal.classList.remove("visible");
-    if (location.hash === "#regalo") {
+    if (location.hash === HASH_REGALO) {
       history.back();
     }
   }
@@ -1643,6 +1645,41 @@ function mostrarToast(mensaje) {
 }
 
 let contadorIntervalo;
+const HASH_INVITACION = "#invitacion";
+const HASH_REGALO = "#regalo";
+
+function hashContenidoInvitacion(hash) {
+  return Boolean(hash && hash !== HASH_REGALO);
+}
+
+function obtenerElementoPorHash(hash) {
+  if (!hash || hash === HASH_INVITACION || hash === HASH_REGALO) return null;
+  try {
+    return document.getElementById(decodeURIComponent(hash.slice(1)));
+  } catch (error) {
+    return null;
+  }
+}
+
+function estadoIndicaInvitacionAbierta() {
+  return Boolean((history.state && history.state.invitacionAbierta) || hashContenidoInvitacion(location.hash));
+}
+
+function preservarEstadoInvitacion() {
+  const estado = { ...(history.state || {}), invitacionAbierta: true };
+  if (hashContenidoInvitacion(location.hash)) {
+    history.replaceState(estado, null, location.href);
+  } else {
+    history.pushState(estado, null, HASH_INVITACION);
+  }
+}
+
+function mostrarInvitacionAbierta() {
+  $("sobre").classList.add("abierto");
+  $("entrada").classList.add("oculta");
+  $("app").classList.add("visible");
+  document.body.classList.remove("bloqueado");
+}
 
 function actualizarCuenta() {
   const objetivo = new Date(CONFIG.evento.fechaCuentaRegresiva).getTime();
@@ -1694,6 +1731,7 @@ function alternarMusica() {
 }
 
 function abrirInvitacion() {
+  preservarEstadoInvitacion();
   $("sobre").classList.add("abierto");
   intentarMusica();
   
@@ -1740,10 +1778,16 @@ function iniciar() {
 
   window.addEventListener("popstate", () => {
     const modal = $("giftModal");
-    if (modal && modal.classList.contains("visible") && location.hash !== "#regalo") {
+    if (modal && modal.classList.contains("visible") && location.hash !== HASH_REGALO) {
       modal.classList.remove("visible");
     }
   });
+
+  if (estadoIndicaInvitacionAbierta()) {
+    mostrarInvitacionAbierta();
+    const destino = obtenerElementoPorHash(location.hash);
+    if (destino) setTimeout(() => destino.scrollIntoView({ behavior: "auto" }), 0);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", iniciar);
