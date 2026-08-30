@@ -1518,7 +1518,7 @@ function crearEventos() {
       <p class="event-data">${textoSeguro(lugar.lugar)}</p>
       <p class="event-address">${textoSeguro(lugar.direccion)}</p>
       <div class="button-row">
-        <a class="btn secundario" href="${textoSeguro(lugar.mapa)}" target="_blank">${ICONOS.mapa}<span>Ver ubicación</span></a>
+        <a class="btn secundario" href="${textoSeguro(lugar.mapa)}">${ICONOS.mapa}<span>Ver ubicación</span></a>
       </div>`;
     const enlaceMapa = item.querySelector("a");
     if (enlaceMapa) {
@@ -1683,21 +1683,7 @@ function restaurarInvitacionSiCorresponde() {
 
 function abrirMapaSinCerrarInvitacion(event) {
   guardarEstadoInvitacionAbierta();
-
-  if (
-    event.defaultPrevented ||
-    event.button !== 0 ||
-    event.metaKey ||
-    event.ctrlKey ||
-    event.shiftKey ||
-    event.altKey
-  ) {
-    return;
-  }
-
-  event.preventDefault();
-  const ventana = window.open(event.currentTarget.href, "_blank");
-  if (!ventana) window.location.href = event.currentTarget.href;
+  event.currentTarget.removeAttribute("target");
 }
 
 function actualizarCuenta() {
