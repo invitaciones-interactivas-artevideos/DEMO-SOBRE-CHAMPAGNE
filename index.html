@@ -941,6 +941,74 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.map-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 7300;
+  display: none;
+  place-items: center;
+  padding: 18px;
+  background: rgba(20, 16, 18, 0.74);
+  backdrop-filter: blur(14px);
+}
+
+.map-modal.visible {
+  display: grid;
+}
+
+.map-panel {
+  width: min(94vw, 760px);
+  height: min(86vh, 680px);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.54);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 28px 80px rgba(0,0,0,0.34);
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.map-header {
+  padding: 18px 62px 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.map-header h2 {
+  margin: 0;
+  font-family: var(--title-font);
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  color: var(--accent);
+}
+
+.map-header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.map-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--ink);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.map-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .toast {
   position: fixed;
   left: 50%;
@@ -1196,6 +1264,17 @@ h2 {
     <h2 id="giftTitle"></h2>
     <p class="lead" id="giftIntro"></p>
     <div class="gift-data" id="giftData"></div>
+  </div>
+</div>
+
+<div class="map-modal" id="mapModal" role="dialog" aria-modal="true" aria-label="Ubicación">
+  <div class="map-panel">
+    <button class="map-close" type="button" id="closeMap" aria-label="Cerrar">x</button>
+    <div class="map-header">
+      <h2 id="mapTitle"></h2>
+      <p id="mapAddress"></p>
+    </div>
+    <iframe class="map-frame" id="mapFrame" title="Mapa de ubicación" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
   </div>
 </div>
 
@@ -1524,7 +1603,7 @@ function crearEventos() {
     if (enlaceMapa) {
       enlaceMapa.addEventListener("pointerdown", guardarEstadoInvitacionAbierta);
       enlaceMapa.addEventListener("touchstart", guardarEstadoInvitacionAbierta, { passive: true });
-      enlaceMapa.addEventListener("click", abrirMapaSinCerrarInvitacion);
+      enlaceMapa.addEventListener("click", (event) => abrirMapaSinCerrarInvitacion(event, lugar));
     }
     grid.appendChild(item);
   });
@@ -1651,6 +1730,7 @@ function mostrarToast(mensaje) {
 let contadorIntervalo;
 const HASH_REGALO = "#regalo";
 const STORAGE_INVITACION_ABIERTA = "invitacionAbierta";
+let mapaAbiertoPorHistorial = false;
 
 function guardarEstadoInvitacionAbierta() {
   try {
@@ -1681,9 +1761,38 @@ function restaurarInvitacionSiCorresponde() {
   if (invitacionEstabaAbierta()) mostrarInvitacionAbierta();
 }
 
-function abrirMapaSinCerrarInvitacion(event) {
+function mapaEmbedUrl(lugar) {
+  const consulta = [lugar.lugar, lugar.direccion].filter(Boolean).join(", ");
+  return `https://maps.google.com/maps?q=${encodeURIComponent(consulta)}&output=embed`;
+}
+
+function abrirMapaSinCerrarInvitacion(event, lugar) {
+  event.preventDefault();
   guardarEstadoInvitacionAbierta();
-  event.currentTarget.removeAttribute("target");
+  mostrarInvitacionAbierta();
+
+  setText("mapTitle", lugar.lugar || lugar.titulo || "Ubicación");
+  setText("mapAddress", lugar.direccion || "");
+  $("mapFrame").src = mapaEmbedUrl(lugar);
+  $("mapModal").classList.add("visible");
+
+  history.pushState({ ...(history.state || {}), invitacionAbierta: true, modal: "mapa" }, "", window.location.href);
+  mapaAbiertoPorHistorial = true;
+}
+
+function cerrarMapa(desdePopState = false) {
+  const modal = $("mapModal");
+  if (!modal.classList.contains("visible")) return;
+
+  modal.classList.remove("visible");
+  $("mapFrame").src = "";
+
+  if (mapaAbiertoPorHistorial && !desdePopState) {
+    mapaAbiertoPorHistorial = false;
+    history.back();
+  } else {
+    mapaAbiertoPorHistorial = false;
+  }
 }
 
 function actualizarCuenta() {
@@ -1772,13 +1881,21 @@ function iniciar() {
 
   $("abrirInvitacion").addEventListener("click", abrirInvitacion);
   $("closeGift").addEventListener("click", cerrarRegalo);
+  $("closeMap").addEventListener("click", () => cerrarMapa());
 
   $("giftModal").addEventListener("click", (event) => {
     if (event.target.id === "giftModal") cerrarRegalo();
   });
 
+  $("mapModal").addEventListener("click", (event) => {
+    if (event.target.id === "mapModal") cerrarMapa();
+  });
+
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") cerrarRegalo();
+    if (event.key === "Escape") {
+      cerrarRegalo();
+      cerrarMapa();
+    }
   });
 
   window.addEventListener("popstate", () => {
@@ -1786,6 +1903,7 @@ function iniciar() {
     if (modal && modal.classList.contains("visible") && location.hash !== HASH_REGALO) {
       modal.classList.remove("visible");
     }
+    cerrarMapa(true);
     restaurarInvitacionSiCorresponde();
   });
 
