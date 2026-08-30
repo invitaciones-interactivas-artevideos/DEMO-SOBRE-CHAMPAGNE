@@ -1521,7 +1521,11 @@ function crearEventos() {
         <a class="btn secundario" href="${textoSeguro(lugar.mapa)}" target="_blank" rel="noopener">${ICONOS.mapa}<span>Ver ubicación</span></a>
       </div>`;
     const enlaceMapa = item.querySelector("a");
-    if (enlaceMapa) enlaceMapa.addEventListener("click", preservarEstadoInvitacion);
+    if (enlaceMapa) {
+      enlaceMapa.addEventListener("pointerdown", preservarEstadoInvitacion);
+      enlaceMapa.addEventListener("touchstart", preservarEstadoInvitacion, { passive: true });
+      enlaceMapa.addEventListener("click", preservarEstadoInvitacion);
+    }
     grid.appendChild(item);
   });
 }
@@ -1647,6 +1651,7 @@ function mostrarToast(mensaje) {
 let contadorIntervalo;
 const HASH_INVITACION = "#invitacion";
 const HASH_REGALO = "#regalo";
+const STORAGE_INVITACION_ABIERTA = "invitacionAbierta";
 
 function hashContenidoInvitacion(hash) {
   return Boolean(hash && hash !== HASH_REGALO);
@@ -1662,10 +1667,25 @@ function obtenerElementoPorHash(hash) {
 }
 
 function estadoIndicaInvitacionAbierta() {
-  return Boolean((history.state && history.state.invitacionAbierta) || hashContenidoInvitacion(location.hash));
+  return Boolean((history.state && history.state.invitacionAbierta) || hashContenidoInvitacion(location.hash) || invitacionGuardadaAbierta());
+}
+
+function guardarInvitacionAbierta() {
+  try {
+    sessionStorage.setItem(STORAGE_INVITACION_ABIERTA, "1");
+  } catch (error) {}
+}
+
+function invitacionGuardadaAbierta() {
+  try {
+    return sessionStorage.getItem(STORAGE_INVITACION_ABIERTA) === "1";
+  } catch (error) {
+    return false;
+  }
 }
 
 function preservarEstadoInvitacion() {
+  guardarInvitacionAbierta();
   const estado = { ...(history.state || {}), invitacionAbierta: true };
   if (hashContenidoInvitacion(location.hash)) {
     history.replaceState(estado, null, location.href);
@@ -1679,6 +1699,13 @@ function mostrarInvitacionAbierta() {
   $("entrada").classList.add("oculta");
   $("app").classList.add("visible");
   document.body.classList.remove("bloqueado");
+}
+
+function restaurarInvitacionAbierta() {
+  if (!estadoIndicaInvitacionAbierta()) return;
+  mostrarInvitacionAbierta();
+  const destino = obtenerElementoPorHash(location.hash);
+  if (destino) setTimeout(() => destino.scrollIntoView({ behavior: "auto" }), 0);
 }
 
 function actualizarCuenta() {
@@ -1781,13 +1808,15 @@ function iniciar() {
     if (modal && modal.classList.contains("visible") && location.hash !== HASH_REGALO) {
       modal.classList.remove("visible");
     }
+    restaurarInvitacionAbierta();
   });
 
-  if (estadoIndicaInvitacionAbierta()) {
-    mostrarInvitacionAbierta();
-    const destino = obtenerElementoPorHash(location.hash);
-    if (destino) setTimeout(() => destino.scrollIntoView({ behavior: "auto" }), 0);
-  }
+  window.addEventListener("pageshow", restaurarInvitacionAbierta);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) restaurarInvitacionAbierta();
+  });
+
+  restaurarInvitacionAbierta();
 }
 
 document.addEventListener("DOMContentLoaded", iniciar);
