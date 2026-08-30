@@ -1518,13 +1518,13 @@ function crearEventos() {
       <p class="event-data">${textoSeguro(lugar.lugar)}</p>
       <p class="event-address">${textoSeguro(lugar.direccion)}</p>
       <div class="button-row">
-        <a class="btn secundario" href="${textoSeguro(lugar.mapa)}" target="_blank" rel="noopener">${ICONOS.mapa}<span>Ver ubicación</span></a>
+        <a class="btn secundario" href="${textoSeguro(lugar.mapa)}" target="_blank">${ICONOS.mapa}<span>Ver ubicación</span></a>
       </div>`;
     const enlaceMapa = item.querySelector("a");
     if (enlaceMapa) {
-      enlaceMapa.addEventListener("pointerdown", preservarEstadoInvitacion);
-      enlaceMapa.addEventListener("touchstart", preservarEstadoInvitacion, { passive: true });
-      enlaceMapa.addEventListener("click", preservarEstadoInvitacion);
+      enlaceMapa.addEventListener("pointerdown", guardarEstadoInvitacionAbierta);
+      enlaceMapa.addEventListener("touchstart", guardarEstadoInvitacionAbierta, { passive: true });
+      enlaceMapa.addEventListener("click", abrirMapaSinCerrarInvitacion);
     }
     grid.appendChild(item);
   });
@@ -1635,7 +1635,7 @@ function cerrarRegalo() {
   const modal = $("giftModal");
   if (modal.classList.contains("visible")) {
     modal.classList.remove("visible");
-    if (location.hash === HASH_REGALO) {
+    if (location.hash === "#regalo") {
       history.back();
     }
   }
@@ -1649,49 +1649,25 @@ function mostrarToast(mensaje) {
 }
 
 let contadorIntervalo;
-const HASH_INVITACION = "#invitacion";
 const HASH_REGALO = "#regalo";
 const STORAGE_INVITACION_ABIERTA = "invitacionAbierta";
 
-function hashContenidoInvitacion(hash) {
-  return Boolean(hash && hash !== HASH_REGALO);
-}
-
-function obtenerElementoPorHash(hash) {
-  if (!hash || hash === HASH_INVITACION || hash === HASH_REGALO) return null;
-  try {
-    return document.getElementById(decodeURIComponent(hash.slice(1)));
-  } catch (error) {
-    return null;
-  }
-}
-
-function estadoIndicaInvitacionAbierta() {
-  return Boolean((history.state && history.state.invitacionAbierta) || hashContenidoInvitacion(location.hash) || invitacionGuardadaAbierta());
-}
-
-function guardarInvitacionAbierta() {
+function guardarEstadoInvitacionAbierta() {
   try {
     sessionStorage.setItem(STORAGE_INVITACION_ABIERTA, "1");
   } catch (error) {}
-}
 
-function invitacionGuardadaAbierta() {
   try {
-    return sessionStorage.getItem(STORAGE_INVITACION_ABIERTA) === "1";
-  } catch (error) {
-    return false;
-  }
+    history.replaceState({ ...(history.state || {}), invitacionAbierta: true }, "", window.location.href);
+  } catch (error) {}
 }
 
-function preservarEstadoInvitacion() {
-  guardarInvitacionAbierta();
-  const estado = { ...(history.state || {}), invitacionAbierta: true };
-  if (hashContenidoInvitacion(location.hash)) {
-    history.replaceState(estado, null, location.href);
-  } else {
-    history.pushState(estado, null, HASH_INVITACION);
-  }
+function invitacionEstabaAbierta() {
+  try {
+    if (sessionStorage.getItem(STORAGE_INVITACION_ABIERTA) === "1") return true;
+  } catch (error) {}
+
+  return Boolean(history.state && history.state.invitacionAbierta);
 }
 
 function mostrarInvitacionAbierta() {
@@ -1701,11 +1677,27 @@ function mostrarInvitacionAbierta() {
   document.body.classList.remove("bloqueado");
 }
 
-function restaurarInvitacionAbierta() {
-  if (!estadoIndicaInvitacionAbierta()) return;
-  mostrarInvitacionAbierta();
-  const destino = obtenerElementoPorHash(location.hash);
-  if (destino) setTimeout(() => destino.scrollIntoView({ behavior: "auto" }), 0);
+function restaurarInvitacionSiCorresponde() {
+  if (invitacionEstabaAbierta()) mostrarInvitacionAbierta();
+}
+
+function abrirMapaSinCerrarInvitacion(event) {
+  guardarEstadoInvitacionAbierta();
+
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  const ventana = window.open(event.currentTarget.href, "_blank");
+  if (!ventana) window.location.href = event.currentTarget.href;
 }
 
 function actualizarCuenta() {
@@ -1758,7 +1750,7 @@ function alternarMusica() {
 }
 
 function abrirInvitacion() {
-  preservarEstadoInvitacion();
+  guardarEstadoInvitacionAbierta();
   $("sobre").classList.add("abierto");
   intentarMusica();
   
@@ -1808,15 +1800,15 @@ function iniciar() {
     if (modal && modal.classList.contains("visible") && location.hash !== HASH_REGALO) {
       modal.classList.remove("visible");
     }
-    restaurarInvitacionAbierta();
+    restaurarInvitacionSiCorresponde();
   });
 
-  window.addEventListener("pageshow", restaurarInvitacionAbierta);
+  window.addEventListener("pageshow", restaurarInvitacionSiCorresponde);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) restaurarInvitacionAbierta();
+    if (!document.hidden) restaurarInvitacionSiCorresponde();
   });
 
-  restaurarInvitacionAbierta();
+  restaurarInvitacionSiCorresponde();
 }
 
 document.addEventListener("DOMContentLoaded", iniciar);
