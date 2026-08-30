@@ -1766,18 +1766,38 @@ function mapaEmbedUrl(lugar) {
   return `https://maps.google.com/maps?q=${encodeURIComponent(consulta)}&output=embed`;
 }
 
-function abrirMapaSinCerrarInvitacion(event, lugar) {
-  event.preventDefault();
+function abrirMapaSinCerrarInvitacion(event) {
   guardarEstadoInvitacionAbierta();
-  mostrarInvitacionAbierta();
 
-  setText("mapTitle", lugar.lugar || lugar.titulo || "Ubicación");
-  setText("mapAddress", lugar.direccion || "");
-  $("mapFrame").src = mapaEmbedUrl(lugar);
-  $("mapModal").classList.add("visible");
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  ) {
+    return;
+  }
 
-  history.pushState({ ...(history.state || {}), invitacionAbierta: true, modal: "mapa" }, "", window.location.href);
-  mapaAbiertoPorHistorial = true;
+  event.preventDefault();
+  
+  // Guardamos la URL del mapa
+  const urlMapa = event.currentTarget.href;
+
+  // Forzamos la apertura usando un enlace temporal con _system para forzar al navegador externo de WhatsApp
+  const linkTemporal = document.createElement('a');
+  linkTemporal.href = urlMapa;
+  linkTemporal.target = '_blank';
+  linkTemporal.rel = 'noopener noreferrer';
+  document.body.appendChild(linkTemporal);
+  linkTemporal.click();
+  document.body.removeChild(linkTemporal);
+
+  // Aseguramos que la invitación mantenga su estado visible por si el usuario vuelve inmediatamente
+  setTimeout(() => {
+    restaurarInvitacionSiCorresponde();
+  }, 300);
 }
 
 function cerrarMapa(desdePopState = false) {
